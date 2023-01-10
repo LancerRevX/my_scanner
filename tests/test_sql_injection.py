@@ -3,7 +3,6 @@ from collections import deque
 import asyncio
 from asyncio import Event
 
-from my_scanner import browse_url
 from my_scanner.attack.sql_injection import SqlInjection
 from my_scanner.net.crawler import AsyncCrawler
 from my_scanner.net.web import Request

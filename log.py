@@ -22,11 +22,11 @@ import logging
 # logging.level("RED", no=45, color="<red>")
 # # logging.critical is 50
 
-log_blue = logging.warning
-log_green = logging.warning
-log_red = logging.warning
-log_orange = logging.warning
-log_verbose = logging.warning
+log_blue = lambda *args: None
+log_green = lambda *args: None
+log_red = lambda *args: None
+log_orange = lambda *args: None
+log_verbose = lambda *args: None
 
 # Set default logging
 # logging.add(sys.stdout, colorize=False, format="{message}", level="INFO")

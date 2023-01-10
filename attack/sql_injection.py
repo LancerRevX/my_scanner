@@ -505,9 +505,9 @@ class SqlInjection(Attack):
 
             Html(response.content, url=mutated_request.url)
             comparison = (
-                response.status == good_status and
-                response.redirection_url == good_redirect and
-                Html(response.content, url=mutated_request.url).text_only_md5 == good_hash
+                    response.status == good_status and
+                    response.redirection_url == good_redirect and
+                    Html(response.content, url=mutated_request.url).text_only_md5 == good_hash
             )
 
             test_results.append(comparison == (flags.section == "True"))
