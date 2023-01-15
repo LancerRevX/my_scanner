@@ -2,7 +2,6 @@ import asyncio
 from collections import deque
 from urllib.parse import unquote
 
-from my_scanner.attack.sql_injection import SqlInjection
 from my_scanner.net.crawler import AsyncCrawler
 from my_scanner.net.web import Request
 from my_scanner.net.classes import CrawlerConfiguration
@@ -10,6 +9,9 @@ from my_scanner.net.sql_persister import SqlPersister
 from my_scanner.net.scope import Scope
 from my_scanner.net.explorer import Explorer
 from my_scanner.report import ResultEntry
+
+from my_scanner.attack.sql_injection import SqlInjection
+from my_scanner.attack.csp import Csp
 
 
 async def attack_server(url: str, attack_class):
@@ -35,16 +37,17 @@ async def attack_server(url: str, attack_class):
         return payloads
 
 
-def scan_server(url: str, *, sql_injection=False) -> list[ResultEntry]:
+def scan_server(url: str, *, sql_injection=False, csp=False) -> list[ResultEntry]:
     payloads = []
     if sql_injection:
         payloads += asyncio.run(attack_server(url, SqlInjection))
+    if csp:
+        payloads += asyncio.run(attack_server(url, Csp))
     results = {}
     for payload in payloads:
+        print(payload)
         if payload.type == 'vulnerability' and payload.category == 'SQL Injection':
-            if results.get(payload.category):
-                results[payload.category].urls.append(unquote(payload.evil_request.url))
-            else:
+            if not results.get(payload.category):
                 results[payload.category] = ResultEntry(
                     'CWE-89',
                     'Непринятие мер по защите структуры запроса SQL',
@@ -53,7 +56,29 @@ def scan_server(url: str, *, sql_injection=False) -> list[ResultEntry]:
                         'Реализация экранирования специальных символов для динамических запросов.',
                         'Использование оператора LIMIT или других элементов управления (для предотвращения утечек данных).'
                     ],
-                    [unquote(payload.evil_request.url)]
+                    []
                 )
+            results[payload.category].vulnerabilities.append((
+                'SQL инъекция',
+                unquote(payload.evil_request.url)
+            ))
+        elif payload.category == 'Content Security Policy Configuration':
+            if not results.get(payload.category):
+                results[payload.category] = ResultEntry(
+                    'CWE-79',
+                    'Непринятие мер по защите структуры веб-страницы',
+                    [
+                        'Использование параметризованных SQL-запросов.',
+                        'Реализация экранирования специальных символов для динамических запросов.',
+                        'Использование оператора LIMIT или других элементов управления (для предотвращения утечек данных).'
+                    ],
+                    []
+                )
+            if payload.info == 'CSP is not set':
+                results[payload.category].vulnerabilities.append((
+                    'Заголовок CSP не установлен',
+                    unquote(payload.evil_request.url)
+                ))
+
 
     return list(results.values())
